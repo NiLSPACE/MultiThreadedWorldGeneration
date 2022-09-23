@@ -13,18 +13,40 @@ function HandleWeb_GeneratorQueue(a_Request)
 			table.insert(res, {name = world:GetName(), numInGenQueue = world:GetGeneratorQueueLength(), numLoadedChunks = world:GetNumChunks()});
 		end);
 		return cJson:Serialize(res);
+	elseif (a_Request.Params['unloadallchunks']) then
+		cRoot:Get():ForEachWorld(function(world)
+			world:QueueUnloadUnusedChunks();
+		end);
+		return "";
 	end
 	return [[
 	<table id="worlds">
-		<tr>
-			<th>World</th>
-			<th>Queue Size</th>
-			<th>Loaded Chunks</th>
-		</tr>
+		<thead>
+			<tr>
+				<th>World</th>
+				<th>Queue Size</th>
+				<th>Loaded Chunks</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+		<tfooter>
+			<tr>
+				<td colspan="2"></td>
+				<td>
+					<button onclick="unloadAllUnusedChunks(this)">Unload Unused</button>
+				<td>
+		</tfooter>
 	</table>
 	<script>
+		async function unloadAllUnusedChunks(sender) {
+			sender.disabled = true;
+			await fetch("/~webadmin/MultiThreadedWorldGeneration/generator-queue?unloadallchunks=true");
+			sender.disabled = false;
+		}
+		
 		(() => {
-			let worldsDom = document.getElementById("worlds");
+			let worldsDom = document.getElementById("worlds").querySelector("tbody");
 			setInterval(async () => {
 				let req = await fetch("/~webadmin/MultiThreadedWorldGeneration/generator-queue?stats=true")
 				let info = await req.json();
